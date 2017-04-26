@@ -24,3 +24,17 @@ smartauth.authenticate('MESSAGE-TO-DISPLAY-ON-PHONE-GOES-HERE', (err, sessionInf
   }
 });
 ```
+
+```
+$ node test.js 
+Session started, waiting for user action...
+Verification code: 4325
+Authentication OK!
+{ countryName: 'EE',
+  organizationName: 'AS Sertifitseerimiskeskus',
+  organizationalUnitName: 'authentication',
+  commonName: 'HIDDEN,NAME,PNOEE-HIDDENIDCODE',
+  surname: 'HIDDEN',
+  givenName: 'NAME',
+  serialNumber: 'PNOEE-HIDDENIDCODE' }
+  ```

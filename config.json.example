@@ -1,0 +1,6 @@
+{
+  "host": "https://sid.demo.sk.ee/smart-id-rp/v1",
+  "relyingPartyUUID": "00000000-0000-0000-0000-000000000000",
+  "relyingPartyName": "DEMO",
+  "certificateLevel": "QUALIFIED"
+}

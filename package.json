@@ -1,13 +1,16 @@
 {
   "name": "smartid-auth",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Smart-ID authentication module for Node.JS",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "demo": "node demo.js",
+    "test": "node test.js"
   },
   "keywords": [
-    "smart-id"
+    "smart-id",
+    "authentication",
+    "mobile"
   ],
   "repository": {
     "type": "git",
@@ -16,7 +19,7 @@
   "author": "Alan Ibrus",
   "license": "ISC",
   "dependencies": {
-    "request": "^2.81.0",
+    "axios": "^0.17.0",
     "x509": "^0.3.2"
   }
 }

@@ -1,98 +1,114 @@
 'use strict';
-const config = require('./config.json');
-const authHash = require('./authhash.js');
-const request = require('request');
+const authHash = require(__dirname + '/authhash.js');
+const axios = require('axios');
 const crypto = require('crypto');
 const x509 = require('x509');
 const CERT_BEGIN = '-----BEGIN CERTIFICATE-----\n';
 const CERT_END = '\n-----END CERTIFICATE-----';
 
-class SmartIDAuth {
-  constructor(idNumber, country = 'EE') {
+class Session {
+  constructor(config, request, id, verificationCode) {
+    this.config = config;
+    this._request = request;
+    this.id = id;
+    this.verificationCode = verificationCode;
+  }
+
+  pollStatus() {
+    return new Promise((resolve, reject) => {
+      const pull = () => {
+        axios({
+          method: 'GET',
+          responseType: 'json',
+          validateStatus: (status) => status === 200,
+          url: this.config.host + '/session/'+ this.id + '?timeoutMs=10000'
+        }).then(response => {
+          let body = response.data;
+          if (typeof body !== 'object') {
+            return reject(new Error('Invalid response'));
+          }
+          if (body.state && body.state !== 'COMPLETE') { // not completed yet, retry
+            return setTimeout(pull.bind(this), 100);
+          } else {
+            if (!body.result) {
+              return reject(new Error('Invalid response (empty result)'));
+            } else if (body.result.endResult !== 'OK') {
+              return reject(new Error(body.result.endResult));
+            } else { // result.endResult = "OK"
+              // verify signature:
+              const verifier = crypto.createVerify(body.signature.algorithm);
+              verifier.update(this._request.hash.raw);
+              const cert = CERT_BEGIN + body.cert.value + CERT_END;
+              if (!verifier.verify(cert, body.signature.value, 'base64')) {
+                return reject(new Error('Invalid signature (verify failed)'));
+              }
+              // check if cert is active and not expired:
+              const parsedCert = x509.parseCert(cert);
+              const date = new Date();
+              if (parsedCert.notBefore > date) {
+                return reject(new Error('Certificate is not active yet'));
+              } else if (parsedCert.notAfter < date) { 
+                return reject(new Error('Certificate has expired'));
+              } else {
+                return resolve({ data: x509.getSubject(cert), result: body.result });
+              }
+            }
+          }
+        }).catch(err => reject(new Error(err)))
+      };
+      pull();
+    });
+  }
+}
+
+class Authentication {
+  constructor(config, country, idNumber) {
+    this.config = config;
     this.request = {
       idNumber: idNumber,
       country: country.toUpperCase()
     };
   }
 
-  authenticate(displayText, callback) {
-    if (typeof displayText === 'function') {
-      callback = displayText;
-    }
-
-    authHash.generateRandomHash().then(hash => {
-      this.request.hash = hash;
-      request({
-        method: 'POST',
-        url: config.host + '/authentication/pno/' + this.request.country + '/' + this.request.idNumber,
-        json: Object.assign(config.requestParams, {
-          hash: hash.digest,
-          hashType: 'SHA512',
-          displayText: (typeof displayText === 'string' ? displayText : undefined)
-        })
-      }, (err, res, body) => {
-        if (err || res.statusCode !== 200) {
-          return callback(err || body);
-        } else {
-          if (typeof body !== 'object') {
-            return callback('Invalid response');
+  authenticate(displayText) {
+    return new Promise((resolve, reject) => {
+      authHash.generateRandomHash().then(hash => {
+        this.request.hash = hash;
+        axios({
+          method: 'post',
+          url: this.config.host + '/authentication/pno/' + this.request.country + '/' + this.request.idNumber,
+          responseType: 'json',
+          validateStatus: (status) => status === 200,
+          data: Object.assign({
+            hash: hash.digest,
+            hashType: 'SHA512',
+            displayText: (typeof displayText === 'string' ? displayText : undefined)
+          }, this.config.requestParams)
+        }).then(response => {
+          let body = response.data;
+          if (typeof body !== 'object' || !body.sessionID) {
+            return reject(new Error('Invalid response'));
           }
-          this.session = {
-            id: body.sessionID,
-            verificationCode: authHash.calculateVerificationCode(hash.digest)
-          };
-          callback(null, this.session);
-        }
+          resolve(new Session(this.config, this.request, body.sessionID, authHash.calculateVerificationCode(hash.digest)));
+        }).catch(err => reject(new Error(err)));
       });
     });
   }
+}
 
-  pollStatus(callback) {
-    const self = this;
-    const pull = function(callback) {
-      request({
-        method: 'GET',
-        json: true,
-        url: config.host + '/session/'+ self.session.id + '?timeoutMs=10000'
-      }, (err, res, body) => {
-        if (err || res.statusCode !== 200) {
-          return callback(err || body);
-        } else {
-          if (typeof body !== 'object') {
-            return callback('Invalid response');
-          }
-          if (body.state !== 'COMPLETE') { // not completed yet, retry
-            return pull(callback);
-          } else {
-            if (!body.result) {
-              return callback('Invalid response (empty result)');
-            } else if (body.result.endResult !== 'OK') {
-              return callback(body.result.endResult);
-            } else { // result.endResult = "OK"
-              // verify signature:
-              const verifier = crypto.createVerify(body.signature.algorithm);
-              verifier.update(self.request.hash.raw);
-              const cert = CERT_BEGIN + body.cert.value + CERT_END;
-              if (!verifier.verify(cert, body.signature.value, 'base64')) {
-                return callback('Invalid signature (verify failed)');
-              }
-              // check if cert is active and not expired:
-              const parsedCert = x509.parseCert(cert);
-              const date = new Date();
-              if (parsedCert.notBefore > date) {
-                return callback('Certificate is not active yet');
-              } else if (parsedCert.notAfter < date) { 
-                return callback('Certificate has expired');
-              } else {
-                callback(null, x509.getSubject(cert));
-              }
-            }
-          }
-        }
-      });
-    };
-    pull(callback);
+class SmartID {
+  constructor(config) {
+    if (!config.host || !config.requestParams) throw new TypeError('Invalid configuration');
+
+    this.config = config;
+  }
+
+  authenticate(country, idNumber, displayText) {
+    if (!country || !idNumber) throw new TypeError('Missing mandatory parameters');
+
+    let auth = new Authentication(this.config, country, idNumber);
+    return auth.authenticate(displayText);
   }
 }
 
-module.exports = SmartIDAuth;
+module.exports = SmartID;

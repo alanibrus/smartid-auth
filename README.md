@@ -5,7 +5,7 @@ Smart-ID authentication module for Node.JS
 `npm install smartid-auth`
 
 ## Trying out with Demo
-1. [Download SmartID Demo app for Android] (https://play.google.com/store/apps/details?id=com.stagnationlab.sk&ah=a4HzglGscCO-V56s6FlAj3ty7Aw)
+1. [Download SmartID Demo app for Android](https://play.google.com/store/apps/details?id=com.stagnationlab.sk&ah=a4HzglGscCO-V56s6FlAj3ty7Aw)
 2. Set up your demo app in your phone
 3. `cd node_modules/smartid-auth/`
 4. `npm run demo [countrycode EE/LT/LV] [Personal-ID-Number]`

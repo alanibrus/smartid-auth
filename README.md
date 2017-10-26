@@ -1,5 +1,4 @@
-# smartid-auth
-Smart-ID authentication module for Node.JS
+# Smart-ID authentication client module for Node.JS
 
 ## Install
 `npm install smartid-auth`

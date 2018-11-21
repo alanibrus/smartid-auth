@@ -47,10 +47,11 @@ class Session {
               const date = new Date();
               if (parsedCert.notBefore > date) {
                 return reject(new Error('Certificate is not active yet'));
-              } else if (parsedCert.notAfter < date) { 
+              } else if (parsedCert.notAfter < date) {
                 return reject(new Error('Certificate has expired'));
               } else {
-                return resolve({ data: x509.getSubject(cert), result: body.result });
+                const certSha = crypto.createHash('sha256').update(body.cert.value).digest('hex');
+                return resolve({ data: x509.getSubject(cert), result: body.result, certSha: certSha });
               }
             }
           }

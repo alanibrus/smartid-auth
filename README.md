@@ -1,4 +1,4 @@
-# Smart-ID authentication client module for Node.JS
+# Smart-ID authentication and signing client module for Node.JS
 
 ## Install
 `npm install smartid-auth`
@@ -17,6 +17,7 @@ Documentation is in progress, refer to the example below:
 const SmartIDAuth = require('smartid-auth');
 const smartauth = new SmartIDAuth({
   host: 'https://sid.demo.sk.ee/smart-id-rp/v1',
+  algorithm: 'SHA256',
   requestParams: {
     relyingPartyUUID: '00000000-0000-0000-0000-000000000000',
     relyingPartyName: 'DEMO',
@@ -36,6 +37,20 @@ smartauth.authenticate('EE', 'ESTONIAN-ID-CODE-GOES-HERE', 'MESSAGE-TO-DISPLAY-O
   });
 }).catch(err => {
   console.error('Error on initializing authentication', err);
+});
+
+smartauth.sign('DOCUMENT-NUMBER-TO-SIGN-WITH', 'DIGEST-TO-SIGN', 'MESSAGE-TO-DISPLAY-ON-PHONE-GOES-HERE').then(session => {
+  // This is the verification code you should display to the user (on your site):
+  console.log('Verification code: ' + session.verificationCode);
+  console.log('Waiting for user action...');
+  session.pollStatusSigning().then(response => {
+    console.log('Signing OK!');
+    console.log(response.data);
+  }).catch(err => {
+    console.error('Signing error', err);
+  });
+}).catch(err => {
+  console.error('Error on initializing signing', err);
 });
 ```
 
@@ -66,3 +81,8 @@ Running `npm run test` will go through those:
 | OK | LT | 10101010005  | QUALIFIED |
 | USER_REFUSED | EE | 10101010016 | QUALIFIED |
 | USER_REFUSED | LT | 10101010016 | QUALIFIED |
+
+
+|  EndResult | Document number | certificateLevel |
+|---|---|---|
+| OK | PNOLV-010101-10006-SGT7-Q | QUALIFIED |

@@ -1,7 +1,5 @@
 # Smart-ID authentication client module for Node.JS
 
-*N.B!* Difference between original [repo](https://github.com/alanibrus/smartid-auth) is that it returns the `sha256` of the users cert in the response.
-
 ## Install
 `npm install smartid-auth`
 
@@ -32,7 +30,7 @@ smartauth.authenticate('EE', 'ESTONIAN-ID-CODE-GOES-HERE', 'MESSAGE-TO-DISPLAY-O
   console.log('Waiting for user action...');
   session.pollStatus().then(response => {
     console.log('Authentication OK!');
-    console.log(response);
+    console.log(response.data);
   }).catch(err => {
     console.error('Authentication error', err);
   });
@@ -48,21 +46,12 @@ $ npm run demo EE 10101010005
 Verification code: 8865
 Waiting for user action...
 Authentication OK!
-{
-  data: {
-    countryName: 'EE',
-    surname: 'SMART-ID',
-    givenName: 'DEMO',
-    serialNumber: 'PNOEE-10101010005',
-    commonName: 'SMART-ID,DEMO,PNOEE-10101010005',
-    organizationalUnitName: 'AUTHENTICATION'
-  },
-  result: {
-    endResult: "OK"
-    documentNumber: "PNOEE-10101010005-G3DD-Q"
-  },
-  certSha: "381ebbe4dba5f4f0125199e9371ebb379c8c7ab25eda49e5a63dc3a9d084c7a5"
-}
+{ countryName: 'EE',
+  surname: 'SMART-ID',
+  givenName: 'DEMO',
+  serialNumber: 'PNOEE-10101010005',
+  commonName: 'SMART-ID,DEMO,PNOEE-10101010005',
+  organizationalUnitName: 'AUTHENTICATION' }
 ```
 
 ## Running tests

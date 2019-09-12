@@ -2,7 +2,7 @@
 const authHash = require(__dirname + '/authhash.js');
 const axios = require('axios');
 const crypto = require('crypto');
-const x509 = require('x509');
+const x509 = require('@ghaiklor/x509');
 const CERT_BEGIN = '-----BEGIN CERTIFICATE-----\n';
 const CERT_END = '\n-----END CERTIFICATE-----';
 

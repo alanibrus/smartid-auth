@@ -1,6 +1,6 @@
 {
   "name": "smartid-auth",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Smart-ID authentication client module for Node.JS",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
   "author": "Alan Ibrus",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.17.0",
-    "x509": "^0.3.2"
+    "@ghaiklor/x509": "^1.0.0",
+    "axios": "^0.19.0"
   }
 }

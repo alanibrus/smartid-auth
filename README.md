@@ -11,8 +11,9 @@
 Example: `npm run demo EE 12345678901`
 
 ## Usage
-Documentation is in progress, refer to the example below:
+Documentation is in progress, refer to the examples below
 
+### Initializing with configuration
 ```javascript
 const SmartIDAuth = require('smartid-auth');
 const smartauth = new SmartIDAuth({
@@ -23,23 +24,99 @@ const smartauth = new SmartIDAuth({
     certificateLevel: 'QUALIFIED'
   }
 });
-
-smartauth.authenticate('EE', 'ESTONIAN-ID-CODE-GOES-HERE', 'MESSAGE-TO-DISPLAY-ON-PHONE-GOES-HERE').then(session => {
-  // This is the verification code you should display to the user (on your site):
-  console.log('Verification code: ' + session.verificationCode);
-  console.log('Waiting for user action...');
-  session.pollStatus().then(response => {
-    console.log('Authentication OK!');
-    console.log(response.data);
-  }).catch(err => {
-    console.error('Authentication error', err);
-  });
-}).catch(err => {
-  console.error('Error on initializing authentication', err);
-});
 ```
 
-## Demo output example
+### Usage Example 1 - Session resolves only when successful result (OK) from Smart-ID service:
+When you only care about successful Smart-ID login and you're going to show only "Login failed" no matter what happened.
+In this example, you don't need to worry about checking the result status yourself.
+
+```javascript
+try {
+  const session = await smartauth.authenticate(
+    'EE', // country
+    '12345678901', // personal ID number
+    'Hello World' // message to display on Smart-ID mobile app
+  );
+
+  // This is the verification code you should display to the user (i.e. on your website):
+  console.log('Verification code: ' + session.verificationCode);
+
+  console.log('Waiting for user action...');
+
+  // getResponse(true) = only "OK" session end result code is valid, all other cases throw error
+  const response = await session.getResponse(true);
+  console.log('Authentication OK!');
+  // full Smart-ID response:
+  console.log(response.data);
+  // Certificate subject (name, country, id number):
+  console.log(response.subject);
+} catch (err) {
+  console.error('Authentication failed');
+  console.error(err);
+}
+```
+
+### Usage Example 2 - Session resolves with any result (OK, USER_REFUSED, TIMEOUT, etc):
+When you need more customization depending on actual end result. For example, to be able to show why login failed.
+In this example you need to check the end result yourself and decide what to do in each case.
+
+```javascript
+try {
+  const session = await smartauth.authenticate(
+    'EE', // country
+    '12345678901', // personal ID number
+    'Hello World' // message to display on Smart-ID mobile app
+  );
+
+  // This is the verification code you should display to the user (i.e. on your website):
+  console.log('Verification code: ' + session.verificationCode);
+
+  console.log('Waiting for user action...');
+
+  // getResponse(false) = all session end result codes are returned
+  const response = await session.getResponse();
+  // full Smart-ID response:
+  console.log(response.data);
+
+  if (response.result === 'OK') {
+    console.log('Authentication OK!');
+    // Certificate subject (name, country, id number):
+    console.log(response.subject);
+  } else {
+    console.log('Authentication failed!:');
+    switch (response.result) {
+      case 'USER_REFUSED':
+        console.error('User refused the request');
+        break;
+      case 'TIMEOUT':
+        console.error('Authentication request timed out');
+        break;
+      case 'DOCUMENT_UNUSABLE':
+        console.error('Request cannot be completed');
+        break;
+      case 'WRONG_VC':
+        console.error('User chose wrong verification code');
+        break;
+      default:
+        console.error(`Unknown result: ${response.result}`);
+    }
+  }
+} catch (err) {
+  console.error('Authentication error');
+  console.error(err);
+}
+```
+
+## Session response object (result of session.getResponse)
+```
+{
+  result: String, one of: 'OK' / 'USER_REFUSED' / 'TIMEOUT', 'DOCUMENT_UNUSABLE', 'WRONG_VC',
+  data: Object, Raw response from Smart-ID service (https://github.com/SK-EID/smart-id-documentation/blob/master/README.md#464-response-structure),
+  subject: Object, x509 certificate subject field { countryName, surName, givenName, serialNumber, commonName }
+}
+```
+
+## Output example
 
 ```
 $ npm run demo EE 10101010005

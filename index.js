@@ -25,6 +25,7 @@ class Session {
       response = await axios({
         method: 'GET',
         responseType: 'json',
+        ...(this.config.httpsAgent && { ...{ httpsAgent: this.config.httpsAgent } }),
         validateStatus: status => status === 200,
         url: this.config.host + '/session/' + this.id + '?timeoutMs=10000',
       });
@@ -95,6 +96,7 @@ class Authentication {
     try {
       response = await axios({
         method: 'post',
+        ...(this.config.httpsAgent && { ...{ httpsAgent: this.config.httpsAgent } }),
         url:
           this.config.host +
           '/authentication/pno/' +

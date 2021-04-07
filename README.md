@@ -22,7 +22,18 @@ const smartauth = new SmartIDAuth({
     relyingPartyUUID: '00000000-0000-0000-0000-000000000000',
     relyingPartyName: 'DEMO',
     certificateLevel: 'QUALIFIED'
-  }
+  },
+/*
+
+  Optionally, you can pass some configuration options for axios requests:
+
+  http: {
+    httpsAgent: new https.Agent(....),
+    proxy: {
+      ...
+    },
+  },
+*/
 });
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "smartid-auth",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Smart-ID authentication client module for Node.JS",
   "main": "index.js",
   "scripts": {

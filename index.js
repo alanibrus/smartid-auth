@@ -8,7 +8,7 @@ const CERT_BEGIN = '-----BEGIN CERTIFICATE-----\n';
 const CERT_END = '\n-----END CERTIFICATE-----';
 
 function timeout(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 class Session {
@@ -22,12 +22,17 @@ class Session {
   async getResponse(rejectNotOK) {
     let response;
     try {
-      response = await axios({
-        method: 'GET',
-        responseType: 'json',
-        validateStatus: status => status === 200,
-        url: this.config.host + '/session/' + this.id + '?timeoutMs=10000',
-      });
+      response = await axios(
+        Object.assign(
+          {
+            method: 'GET',
+            responseType: 'json',
+            validateStatus: (status) => status === 200,
+            url: this.config.host + '/session/' + this.id + '?timeoutMs=10000',
+          },
+          this.config.http || {}
+        )
+      );
     } catch (err) {
       response = err.response;
     }
@@ -93,26 +98,31 @@ class Authentication {
     this.request.hash = hash;
     let response;
     try {
-      response = await axios({
-        method: 'post',
-        url:
-          this.config.host +
-          '/authentication/pno/' +
-          this.request.country +
-          '/' +
-          this.request.idNumber,
-        responseType: 'json',
-        validateStatus: status => status === 200,
-        data: Object.assign(
+      response = await axios(
+        Object.assign(
           {
-            hash: hash.digest,
-            hashType: 'SHA512',
-            displayText:
-              typeof displayText === 'string' ? displayText : undefined,
+            method: 'post',
+            url:
+              this.config.host +
+              '/authentication/pno/' +
+              this.request.country +
+              '/' +
+              this.request.idNumber,
+            responseType: 'json',
+            validateStatus: (status) => status === 200,
+            data: Object.assign(
+              {
+                hash: hash.digest,
+                hashType: 'SHA512',
+                displayText:
+                  typeof displayText === 'string' ? displayText : undefined,
+              },
+              this.config.requestParams
+            ),
           },
-          this.config.requestParams
-        ),
-      });
+          this.config.http || {}
+        )
+      );
     } catch (err) {
       response = err.response;
     }
